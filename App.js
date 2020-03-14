@@ -12,19 +12,45 @@ import {
   View,
   Text,
   TouchableOpacity,
+  SectionList,
 } from 'react-native';
 
 class Square extends Component {
   render() {
     return (
-      <TouchableOpacity style={styles.square}></TouchableOpacity>
+      <TouchableOpacity 
+      style={styles.square} 
+      onPress={() => this.props.onPress()}>
+        <Text style={{fontSize: 50, textAlign: 'center' }}>
+        {this.props.value}
+          {() => this.props.onClick()}
+        </Text>
+      </TouchableOpacity>
     );
   }
 }
 
 class Board extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      squares: Array(9).fill(null),
+    };
+  }
+
+  handleClick(i) {
+    const squares = this.state.squares.slice();
+    squares[i] = 'X';
+    this.setState({squares: squares});
+  }
+
   renderSquare(i) {
-    return <Square />;
+    return (
+      <Square
+        value={this.state.squares[i]}
+        onPress={() => this.handleClick(i)}
+      />
+    );
   }
   render() {
 
@@ -61,6 +87,10 @@ class App extends Component {
       <View style={styles.sectionContainer}>
         <View>
           <Board />
+        </View>
+        <View style={{ flex: 0.5}}>
+          <View style={{ flex: 0.5}}>{/*STATUS*/}</View>
+          <SectionList>{/*TODO*/}</SectionList>
         </View>
       </View>
     );
