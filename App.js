@@ -14,87 +14,105 @@ import {
   TouchableOpacity,
   SectionList,
 } from 'react-native';
+import Board from './Board.js';
+import { List, ListItem } from 'react-native-elements'
 
-class Square extends Component {
-  render() {
-    return (
-      <TouchableOpacity 
-      style={styles.square} 
-      onPress={() => this.props.onPress()}>
-        <Text style={{fontSize: 50, textAlign: 'center' }}>
-        {this.props.value}
-          {() => this.props.onClick()}
-        </Text>
-      </TouchableOpacity>
-    );
-  }
-}
-
-class Board extends Component {
+export default class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      squares: Array(9).fill(null),
+      history: [{
+        squares: Array(9).fill(null),
+      }],
+      xIsNext: true,
+      stepNumber: 0,
     };
   }
 
   handleClick(i) {
-    const squares = this.state.squares.slice();
-    squares[i] = 'X';
-    this.setState({squares: squares});
+    const history = this.state.history.slice(0, this.state.stepNumber +1);
+    const current = history[history.length - 1];
+    const squares = current.squares.slice();
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    squares[i] = this.state.xIsNext ? 'X' : 'O';
+    this.setState({
+      history: history.concat([{
+        squares: squares,
+      }]),
+      xIsNext: !this.state.xIsNext,
+      stepNumber: history.length,    
+    });
   }
 
-  renderSquare(i) {
-    return (
-      <Square
-        value={this.state.squares[i]}
-        onPress={() => this.handleClick(i)}
-      />
-    );
+  jumpTo(step) {
+    this.setState({
+      stepNumber: step,
+      xIsNext: (step % 2) === 0,
+    });
   }
+
   render() {
-
-    const status = 'Siguiente jugador: X';
-
-    return (
-    <View>
-      <Text className='status' style={styles.status}>{status}</Text>
-  
-      <View style={styles.squaresContainer}>
-        {this.renderSquare(0)}
-        {this.renderSquare(1)}
-        {this.renderSquare(2)}
-      </View>
-      <View style={styles.squaresContainer}>
-      {this.renderSquare(3)}
-      {this.renderSquare(4)}
-      {this.renderSquare(5)}
-      </View>
-      <View style={styles.squaresContainer}>
-      {this.renderSquare(6)}
-      {this.renderSquare(7)}
-      {this.renderSquare(8)}
-      </View>
-  
-    </View>
-    );
-  };
-};
-
-class App extends Component {
-  render() {
+    const history = this.state.history;
+    const current = history[this.state.stepNumber];
+    const winner = calculateWinner(current.squares);
+    
+    const moves = history.map((step, move) => {
+      const desc = move ? 
+      'Ir al movimiento #' + move :
+      'Comenzar a jugar';
+      return (
+          <TouchableOpacity 
+          key={move}
+          onPress={() => this.jumpTo(move)}>
+            <Text>{desc}</Text>
+          </TouchableOpacity>
+      )
+    });
+    
+    let status;
+    if (winner) {
+      status = 'El ganador es: ' + winner;
+    } else {
+      status = 'Siguiente jugador: ' + (this.state.xIsNext ? 'X' : 'O');
+    }
+    
     return (
       <View style={styles.sectionContainer}>
         <View>
-          <Board />
+          <Board 
+          squares={current.squares}
+          onPress={(i) => this.handleClick(i)}/>
         </View>
         <View style={{ flex: 0.5}}>
-          <View style={{ flex: 0.5}}>{/*STATUS*/}</View>
-          <SectionList>{/*TODO*/}</SectionList>
+          <Text style={styles.status}>{status}</Text>
+          <View>{moves}</View>
         </View>
       </View>
     );
   }
+}
+
+function calculateWinner(squares) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b , c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
 }
 
 const styles = StyleSheet.create({
@@ -104,25 +122,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  square: {
-    borderWidth: 1,
-    width: 100,
-    height: 100,
-  },
-  squaresContainer: {
-    flexDirection: 'row',
-  },
   cross: {
-    flex: 1,
+    flex: 0.5,
     color: 'red',
     fontSize: 80,
     alignItems: 'center',
     justifyContent: 'center',
   },
   status: {
+    flex: 0.5, 
     textAlign: 'center',
-    marginBottom: 30,
+    marginTop: 20,
+    fontSize: 25,
   }
 });
-
-export default App;
